@@ -13,13 +13,21 @@ james.munns@ferrous-systems.com
 
 ::: notes
 
+* Who Am I?
+* Sort of about Embedded Systems
+* Get the compiler to understand what you're trying to do
+* Enforce at compile time
+* Zero Cost Abstractions
+
+:::
+
+<!--
 Who am I?
 
 So, today's talk is sort of about embedded systems, but really the cool thing we're going to talk about is how to get the compiler to understand more about what you are trying to do with your program, and enforce your rules at compile time, rather than writing code that checks itself at run time.
 
 In Rust, this isn't a new concept, "Zero Cost Abstractions" are the first feature listed on the home page:
-
-:::
+-->
 
 ---
 
@@ -27,17 +35,22 @@ In Rust, this isn't a new concept, "Zero Cost Abstractions" are the first featur
 
 ::: notes
 
+* Cost => overhead at runtime
+    * memory or CPU cycles
+* Reduce monetary costs
+    * lower power hardware
+    * still gets the job done
+* CPU cycles means battery life
+
+:::
+
+<!--
 This means that we are able to make some kind of abstraction, for zero cost. The cost we are talking about here is overhead at runtime, either in memory used or cpu cycles when you are running your program.
 
 For embedded systems, you are always trying to reduce your costs, typically by using hardware with lower features, while still operating as it is supposed to. The lower the number of CPU cycles needed per second, or the lower the maximum amount of RAM or Flash storage is needed, the lower the parts necessary to build the system will cost.
 
 CPU cycles also have another cost for embedded systems. The more the CPU does, the more battery it uses, making battery life shorter.
-
-:::
-
----
-
-# Part 0: Background Info
+-->
 
 ---
 
@@ -65,9 +78,17 @@ CPU cycles also have another cost for embedded systems. The more the CPU does, t
 
 ::: notes
 
-Rust as a language has defined and is stabilizing all of the language items needed in an embedded context, mostly around the wierdness that is running code outside of an operating system, like what to do if your code panics, or how to start your code after you first boot up
+* Stabilizing language items
+* Wierdness
+    * outside an operating systems
+    * when you panic
+    * how to start code on boot
 
 :::
+
+<!--
+Rust as a language has defined and is stabilizing all of the language items needed in an embedded context, mostly around the wierdness that is running code outside of an operating system, like what to do if your code panics, or how to start your code after you first boot up
+-->
 
 ---
 
@@ -77,9 +98,14 @@ Rust as a language has defined and is stabilizing all of the language items need
 
 ::: notes
 
-LLVM already supports microcontrollers, thanks to its' C and C++ usage
+* Compiler Backend
+* Supports uC, C and C++ background
 
 :::
+
+<!--
+LLVM already supports microcontrollers, thanks to its' C and C++ usage
+-->
 
 ---
 
@@ -89,9 +115,17 @@ LLVM already supports microcontrollers, thanks to its' C and C++ usage
 
 ::: notes
 
-We don't have an operating system, or anything we can pretend is one, so it would be hard to use the standard library, but we can throw it all out if we need, and add back just the parts we want
+* No operating systems
+* Can't pretend there is one
+* Standard library
+    * we can throw it out!
+    * Add it back
 
 :::
+
+<!--
+We don't have an operating system, or anything we can pretend is one, so it would be hard to use the standard library, but we can throw it all out if we need, and add back just the parts we want
+-->
 
 ---
 
@@ -220,29 +254,6 @@ Great! We have all of the superpowers of Rust, but how do we interact with those
 ---
 
 ```rust
-const SER_PORT_SPEED_REG: *mut u32 = 0x4000_1000 as _;
-
-fn read_serial_port_speed() -> u32 {
-    unsafe { // <-- :(
-        *SER_PORT_SPEED_REG
-    }
-}
-fn write_serial_port_speed(val: u32) {
-    unsafe { // <-- :(
-        *SER_PORT_SPEED_REG = val;
-    }
-}
-```
-
-::: notes
-
-Actually, its a little worse. Since these peripherals can change at any time (if the hardware decides to change it without the CPU knowing), we need to mark these fields as volatile, so the compiler won't optimize away reads or writes. That looks like this:
-
-:::
-
----
-
-```rust
 use core::ptr;
 const SER_PORT_SPEED_REG: *mut u32 = 0x4000_1000 as _;
 
@@ -279,7 +290,11 @@ impl SerialPort {
     fn new() -> SerialPort {
         SerialPort
     }
+```
 
+---
+
+```rust
     fn read_speed(&self) -> u32 {
         unsafe {
             ptr::read_volatile(Self::SER_PORT_SPEED_REG)
@@ -334,7 +349,11 @@ fn do_something() {
     // Okay, lets send some slow data
     // ...
 }
+```
 
+---
+
+```rust
 fn something_else() {
     let mut serial = SerialPort::new();
     // We gotta go fast for this!
@@ -652,22 +671,6 @@ struct GpioPin;
 
 ---
 
-```rust
-// this works
-pub struct OutputGpio<MODE> {
-    _mode: MODE
-}
-```
-
-```rust
-// friendlier for macros
-pub struct Output<MODE> {
-    _mode: PhantomData<MODE>,
-}
-```
-
----
-
 ## Can we do more with types?
 
 > oh, you bet we can
@@ -837,6 +840,28 @@ where
 
 ---
 
+## Option&lt;T&gt;
+
+> you don't have to use all of this...
+
+::: notes
+
+It's important to note that you don't have to do any of this stuff. If you're making a simple project where you blink an LED, or read some data off a serial port, or build a robot to brush your teeth, this could all feel like overkill!
+
+If you are fine with wrapping your register interactions in unsafe everywhere you use them, thats fine! You **will** need to manually keep track of what you do with your hardware, but that doesn't leave us any worse off than where we are in languages like C, and you still get to keep all of the rest of the Rust goodies like cargo and interators and match statements.
+
+But, if you are a library writer, providing code for other people to use, why wouldn't you want to give them sane defaults, or good rules (or at least suggestions) on how to use the hardware?
+
+People pick up new hardware all of the time, and every piece of hardware is different. I've misremembered how things work more commonly than I've gotten things right the first time. If the people who know the most about a piece of hardware have the tools to make things easier and more foolproof for the people who use that hardware, I think we could make getting in to hardware a lot more accessible for developers to get things right.
+
+:::
+
+---
+
+# Thank you!
+
+---
+
 ## Plugs
 
 ![](./assets/plug.svg)
@@ -848,19 +873,15 @@ where
 
 ---
 
-## The Embedded Working Group
-
 ![](./assets/ewg-logo.png)
 
-todo: make this image prettier
+## The Embedded Working Group
 
 ---
 
 ## Ferrous Systems
 
 ![](./assets/ferrous.png)
-
-todo: replace this image
 
 ---
 
@@ -874,4 +895,121 @@ james.munns@ferrous-systems.com
 
 ---
 
-# Thank you!
+# Secret Bonus Slides
+
+---
+
+```rust
+pub struct OutputGpio<MODE> {
+    _mode: MODE
+}
+```
+
+```rust
+pub struct Output<MODE> {
+    _mode: PhantomData<MODE>,
+}
+```
+
+todo: explain these differences
+
+---
+
+Wait, but if you generate all the code for the peripherals, how do you add functionality? or create instances?
+
+---
+
+```rust
+// in crate `nrf52`, generated by svd2rust
+pub struct PIN_CNF {
+    register: ::vcell::VolatileCell<u32>,
+}
+
+impl PIN_CNF {
+    pub fn modify<F>(&self, f: F) { ... }
+    pub fn read(&self) -> R { ... }
+    pub fn write<F>(&self, f: F) { ... }
+    pub fn reset(&self) { ... }
+}
+```
+
+---
+
+```rust
+fn main() {
+    let _ = PIN_CNF {
+        register: VolatileCell::new(10)
+    };
+}
+```
+
+```
+error[E0451]: field `register` of struct `nrf52::PIN_CNF` is private
+  --> src/main.rs:22:9
+   |
+22 |         register: VolatileCell::new(10)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `register` is private
+```
+
+---
+
+## lets try that again
+
+---
+
+```rust
+// src/p0/mod.rs
+pub struct PIN_CNF {
+    register: ::vcell::VolatileCell<u32>,
+}
+```
+
+> this is our pin configuration register
+
+---
+
+```rust
+// src/p0/mod.rs
+#[repr(C)]
+pub struct RegisterBlock {
+    _reserved0: [u8; 1284usize],
+    pub out: OUT,
+    pub detectmode: DETECTMODE,
+    _reserved1: [u8; 472usize],
+    pub pin_cnf: [PIN_CNF; 32],
+}
+```
+
+> this is the larger block of registers that the PIN_CNF array lives in
+
+---
+
+```rust
+pub struct P0 {
+    _marker: PhantomData<*const ()>,
+}
+impl P0 {
+    pub fn ptr() -> *const p0::RegisterBlock {
+        1342177280 as *const _
+    }
+}
+impl Deref for P0 {
+    fn deref(&self) -> &p0::RegisterBlock {
+        unsafe { &*P0::ptr() }
+    }
+}
+```
+
+---
+
+```rust
+fn main() {
+
+}
+```
+
+---
+
+## Extension Traits
+
+> like DLC for someone else's code
