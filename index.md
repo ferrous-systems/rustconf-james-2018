@@ -970,6 +970,8 @@ People pick up new hardware all of the time, and every piece of hardware is diff
 
 ---
 
+github.com/rust-embedded/wg
+
 ![](./assets/ewg-logo.png)
 
 ## The Embedded Working Group
@@ -980,6 +982,8 @@ People pick up new hardware all of the time, and every piece of hardware is diff
 
 ![](./assets/ferrous.png)
 
+ferrous-systems.com
+
 ---
 
 > Getting Something For Nothing
@@ -989,6 +993,8 @@ James Munns
 @bitshiftmask
 
 james.munns@ferrous-systems.com
+
+https://github.com/ferrous-systems/rustconf-james-2018
 
 ---
 
